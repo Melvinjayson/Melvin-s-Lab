@@ -3,17 +3,23 @@ FROM node:20-slim as builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better layer caching
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with specific cache settings and parallel installation
+RUN npm config set cache-min 9999999 && \
+    npm ci --prefer-offline --no-audit --no-progress --max-old-space-size=4096 && \
+    npm cache clean --force
 
-# Copy project files
-COPY . .
+# Copy only necessary project files
+COPY tsconfig*.json ./
+COPY vite.config.ts ./
+COPY index.html ./
+COPY src/ ./src/
+COPY public/ ./public/
 
-# Build the project
-RUN npm run build
+# Build the project with optimized settings
+RUN NODE_ENV=production npm run build
 
 # Production stage
 FROM nginx:alpine
