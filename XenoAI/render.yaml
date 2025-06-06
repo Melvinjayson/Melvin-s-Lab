@@ -1,0 +1,31 @@
+# Render deployment configuration
+services:
+  # Backend API service
+  - type: web
+    name: xenoai-api
+    env: node
+    plan: free
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: xenoai-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CLIENT_URL
+        value: https://xenoai-client.vercel.app
+
+# Database
+databases:
+  - name: xenoai-db
+    plan: free
+    databaseName: xenoai
+    user: xenoai
